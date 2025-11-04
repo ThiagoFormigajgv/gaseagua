@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Distribuidora Premium</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Fontes e ícones -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --verde-bandeira: #009739;
+      --verde-grad: linear-gradient(90deg, #009739 0%, #00c853 100%);
+      --branco: #fff;
+      --radius: 22px;
+      --cinza-claro: #f7f9fa;
+    }
+    body {
+      background: linear-gradient(135deg,#009739 0%,#00c853 100%);
+      min-height:100vh;
+      font-family:'Montserrat',Arial,sans-serif;
+      margin:0;padding:0;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .container {
+      background: #fff9;
+      box-shadow:0 8px 32px #00973918;
+      border-radius:var(--radius);
+      max-width:430px;
+      width:98vw;
+      padding:36px 24px 28px 24px;
+      margin:40px auto;
+    }
+    h1 {
+      font-size:2em; font-weight:700; text-align:center;
+      background:var(--verde-grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      margin-bottom:30px;
+    }
+    label { font-weight:600;color:#222;}
+    select,input[type="text"],textarea {
+      width:100%;padding:13px;margin-top:7px;margin-bottom:20px;
+      border-radius:var(--radius);border:none;font-size:1em;background:#f9f9f9cc;
+    }
+    textarea { min-height:60px; resize:none;}
+    .produtos { display:flex;gap:18px;margin-bottom:22px;}
+    .produto-card {
+      flex:1;background:#fff7;border-radius:var(--radius);box-shadow:0 4px 16px #00973913;
+      padding:20px 10px 16px;text-align:center;cursor:pointer;position:relative;
+      border:2.5px solid transparent;transition:.25s box-shadow,.25s transform,.25s border-color;
+    }
+    .produto-card.selected { border-color:#00c853cc;box-shadow:0 8px 32px #00973922;}
+    .produto-icon { font-size:2.3em;color:#009739;margin-bottom:10px;}
+    .produto-nome { font-weight:bold;color:#222;font-size:.99em;margin-bottom:3px;}
+    .preco { color:#009739;font-size:.99em;font-weight:bold;margin-bottom:4px;}
+    .quantidade-control { display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;}
+    .quantidade-btn {
+      background-image:var(--verde-grad);color:#fff;border:none;border-radius:50%;
+      width:36px;height:36px;font-size:1.3em;cursor:pointer;
+    }
+    .quantidade-num { font-size:1.15em;font-weight:bold;width:28px;text-align:center;color:#222;}
+    .produto-desc {font-size:.88em;color:#888;}
+    .total-bar {
+      background:#fff9;border-radius:var(--radius);
+      box-shadow:0 -2px 12px #00973911;padding:14px;margin-bottom:-8px;margin-top:-8px;
+      display:flex;justify-content:space-between;align-items:center;font-size:1.13em;font-weight:bold;color:#009739
+    }
+    .form-group {margin-bottom:16px;}
+    .btn-whatsapp {
+      width:100%;background-image:var(--verde-grad);color:#fff;border-radius:var(--radius);border:none;
+      padding:16px 0;font-size:1.13em;font-weight:bold;cursor:pointer;margin-top:18px
+    }
+    .btn-whatsapp[disabled] {
+      opacity:.6; cursor:not-allowed; filter:saturate(0.5);
+    }
+    .btn-whatsapp:hover:not([disabled]) {background-image:linear-gradient(90deg,#00c853,#009739);}
+    .promo-group {margin-bottom:16px;}
+    .promo-label {display:flex;align-items:center;gap:.5em;font-weight:bold;}
+    .promo-input {display:none;}
+    .promo-input.active {display:block;}
+    .desconto-label {color:#00c853;font-weight:bold;font-size:.98em;}
+    .erro-cupom {
+      color:#d32f2f;font-weight:bold;font-size:.97em;margin-top:-12px;margin-bottom:10px;display:block;
+    }
+    @media (max-width:500px) {.container{padding:14px 2vw;} .produtos{flex-direction:column;gap:12px;} .total-bar{font-size:.99em}}
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1><i class="fa-solid fa-fire-flame-curved"></i> Gás & Água Premium</h1>
+  
+  <div class="form-group">
+    <label for="distribuidora"><i class="fa-solid fa-store"></i> Escolha a distribuidora:</label>
+    <select id="distribuidora" onchange="atualizarPrecos()">
+      <option value="" disabled selected>Selecione</option>
+      <option value="A">Distribuidora A</option>
+      <option value="B">Distribuidora B</option>
+      <option value="C">Distribuidora C</option>
+      <option value="D">Distribuidora D</option>
+    </select>
+  </div>
+
+  <div class="produtos">
+    <div class="produto-card" id="produto-gas" onclick="selecionarProduto('gas')">
+      <span class="produto-icon"><i class="fa-solid fa-gas-pump"></i></span>
+      <div class="produto-nome">Gás P13</div>
+      <div class="preco">R$ <span id="preco-gas">--</span></div>
+      <div class="quantidade-control">
+        <button class="quantidade-btn" onclick="event.stopPropagation(); alterarQtd('gas', -1)"><i class="fa-solid fa-minus"></i></button>
+        <span class="quantidade-num" id="qtd-gas">0</span>
+        <button class="quantidade-btn" onclick="event.stopPropagation(); alterarQtd('gas', +1)"><i class="fa-solid fa-plus"></i></button>
+      </div>
+      <div class="produto-desc">Botijão de 13kg</div>
+    </div>
+    <div class="produto-card" id="produto-agua" onclick="selecionarProduto('agua')">
+      <span class="produto-icon"><i class="fa-solid fa-droplet"></i></span>
+      <div class="produto-nome">Água Mineral</div>
+      <div class="preco">R$ <span id="preco-agua">--</span></div>
+      <div class="quantidade-control">
+        <button class="quantidade-btn" onclick="event.stopPropagation(); alterarQtd('agua', -1)"><i class="fa-solid fa-minus"></i></button>
+        <span class="quantidade-num" id="qtd-agua">0</span>
+        <button class="quantidade-btn" onclick="event.stopPropagation(); alterarQtd('agua', +1)"><i class="fa-solid fa-plus"></i></button>
+      </div>
+      <div class="produto-desc">Galão de 20L</div>
+    </div>
+  </div>
+
+  <!-- CÓDIGO PROMOCIONAL -->
+  <div class="promo-group">
+    <label class="promo-label"><input type="checkbox" id="usarPromo" onchange="togglePromo()"> Usar código promocional?</label>
+    <input type="text" id="codigoPromo" placeholder="Digite o código promocional" class="promo-input" oninput="atualizarTotal()">
+    <span id="descontoLabel" class="desconto-label"></span>
+    <span id="erroCupom" class="erro-cupom" style="display:none;"></span>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="total-bar" style="margin-bottom:18px;">
+    <span>Total:&nbsp;<span id="valor-total">0,00</span></span>
+    <span id="itens-total"></span>
+  </div>
+
+  <!-- DADOS DO CLIENTE -->
+  <div class="form-group">
+    <label for="nome"><i class="fa-solid fa-user"></i> Nome:</label>
+    <input type="text" id="nome" placeholder="Seu nome completo">
+  </div>
+  <div class="form-group">
+    <label for="endereco"><i class="fa-solid fa-location-dot"></i> Endereço de entrega:</label>
+    <input type="text" id="endereco" placeholder="Rua, número, bairro...">
+  </div>
+  <div class="form-group">
+    <label for="obs"><i class="fa-solid fa-comment-dots"></i> Observações (referência, portão, bloco...):</label>
+    <textarea id="obs" placeholder="Exemplo: Casa azul, portão lateral, bloco B..."></textarea>
+  </div>
+  <div class="form-group">
+    <label for="pagamento"><i class="fa-solid fa-money-bill-wave"></i> Forma de pagamento:</label>
+    <select id="pagamento">
+      <option value="" disabled selected>Selecione</option>
+      <option>Dinheiro</option>
+      <option>Pix</option>
+      <option>Cartão de crédito/débito</option>
+      <option>Outro</option>
+    </select>
+  </div>
+
+  <!-- BOTÃO DE ENVIO -->
+  <button class="btn-whatsapp" id="btnEnviar" onclick="enviarWhatsapp()">
+    <i class="fa-brands fa-whatsapp"></i> Enviar Pedido via WhatsApp
+  </button>
+
+</div>
+
+<script>
+// Preços por distribuidora
+const precosDistribuidora = {
+  A:{ gas:110, agua:15, whatsapp:'55999999999', promo:{'PROMOA':{desconto:10}} },
+  B:{ gas:120, agua:17, whatsapp:'55888888888', promo:{'BEMVINDO':{descontoPercentual:10}} },
+  C:{ gas:115, agua:16, whatsapp:'55777777777', promo:{'CUPOMC':{desconto:5}} },
+  D:{ gas:112, agua:14, whatsapp:'55666666666', promo:{} }
+};
+let distribuidoraAtual = null;
+let qtd = { gas:0, agua:0 };
+let descontoAplicado = null;
+let cupomValido = true;
+
+// Atualiza preços ao trocar distribuidora
+function atualizarPrecos() {
+  const dist = document.getElementById('distribuidora').value;
+  distribuidoraAtual = dist;
+  if(!dist || !precosDistribuidora[dist]) return;
+  document.getElementById('preco-gas').innerText = precosDistribuidora[dist].gas.toLocaleString('pt-BR');
+  document.getElementById('preco-agua').innerText = precosDistribuidora[dist].agua.toLocaleString('pt-BR');
+  atualizarTotal();
+}
+
+// Seleção visual do produto
+function selecionarProduto(produto) {
+  document.getElementById('produto-gas').classList.toggle('selected', produto==='gas');
+  document.getElementById('produto-agua').classList.toggle('selected', produto==='agua');
+}
+
+// Alterar quantidade
+function alterarQtd(produto, delta) {
+  qtd[produto] = Math.max(0, qtd[produto] + delta);
+  document.getElementById('qtd-'+produto).innerText = qtd[produto];
+  atualizarTotal();
+}
+
+// Código promocional
+function togglePromo() {
+  const checked = document.getElementById('usarPromo').checked;
+  document.getElementById('codigoPromo').classList.toggle('active', checked);
+  if(!checked) {
+    document.getElementById('codigoPromo').value = '';
+    descontoAplicado = null;
+    document.getElementById('descontoLabel').innerText = '';
+    document.getElementById('erroCupom').style.display = 'none';
+    cupomValido = true;
+    atualizarTotal();
+  } else {
+    atualizarTotal();
+  }
+}
+
+// Atualizar valor total e desconto
+function atualizarTotal() {
+  let total = 0;
+  let itens = qtd.gas+qtd.agua;
+  let desconto = null;
+  let erroCupomMsg = '';
+  
+  if(distribuidoraAtual && precosDistribuidora[distribuidoraAtual]) {
+    total += qtd.gas*precosDistribuidora[distribuidoraAtual].gas;
+    total += qtd.agua*precosDistribuidora[distribuidoraAtual].agua;
+
+    // Promoção
+    if(document.getElementById('usarPromo').checked) {
+      const cod = document.getElementById('codigoPromo').value.trim().toUpperCase();
+      const promoObj = precosDistribuidora[distribuidoraAtual].promo[cod];
+      
+      if(cod.length > 0 && !promoObj) {
+        erroCupomMsg = 'Código inválido, tente novamente ou desmarque a opção.';
+        cupomValido = false;
+        descontoAplicado = null;
+        document.getElementById('descontoLabel').innerText = '';
+        document.getElementById('erroCupom').innerText = erroCupomMsg;
+        document.getElementById('erroCupom').style.display = 'block';
+        document.getElementById('btnEnviar').disabled = true;
+      } else if(promoObj) {
+        cupomValido = true;
+        if(promoObj.desconto) {
+          desconto = promoObj.desconto;
+          total -= desconto;
+          document.getElementById('descontoLabel').innerText = `Desconto aplicado de R$ ${desconto.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+        } else if(promoObj.descontoPercentual) {
+          desconto = total * (promoObj.descontoPercentual/100);
+          total -= desconto;
+          document.getElementById('descontoLabel').innerText = `Desconto aplicado de ${promoObj.descontoPercentual}% (-R$ ${desconto.toLocaleString('pt-BR',{minimumFractionDigits:2})})`;
+        }
+        descontoAplicado = desconto;
+        document.getElementById('erroCupom').style.display = 'none';
+        document.getElementById('btnEnviar').disabled = false;
+      } else {
+        // Campo vazio
+        cupomValido = true;
+        descontoAplicado = null;
+        document.getElementById('descontoLabel').innerText = '';
+        document.getElementById('erroCupom').style.display = 'none';
+        document.getElementById('btnEnviar').disabled = false;
+      }
+      
+    } else {
+      cupomValido = true;
+      document.getElementById('erroCupom').style.display = 'none';
+      descontoAplicado = null;
+      document.getElementById('descontoLabel').innerText = '';
+      document.getElementById('btnEnviar').disabled = false;
+    }
+    
+  }
+
+  document.getElementById('valor-total').innerText = total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('itens-total').innerText = itens>0?`(${itens} item${itens>1?'s':''})`:'';
+}
+
+// WhatsApp
+function enviarWhatsapp() {
+  if(document.getElementById('btnEnviar').disabled) return;
+
+  const distKey = distribuidoraAtual;
+  if(!distKey || !precosDistribuidora[distKey]) {
+    Swal.fire({ icon:'warning', title:'Escolha a distribuidora!' });
+    return;
+  }
+  
+  const distNome = "Distribuidora " + distKey;
+  const distFone = precosDistribuidora[distKey].whatsapp;
+  
+  const nome = document.getElementById('nome').value.trim();
+  const endereco = document.getElementById('endereco').value.trim();
+  const pagamento = document.getElementById('pagamento').value;
+  const obs = document.getElementById('obs').value.trim();
+
+  if(!nome || !endereco || !pagamento || (qtd.gas===0 && qtd.agua===0)) {
+    Swal.fire({ icon:'warning', title:'Preencha todos os campos e selecione pelo menos um produto!' });
+    return;
+  }
+
+  let msg = `Olá ${distNome}, gostaria de fazer um pedido:\n\n`;
+  if(qtd.gas>0) msg += `• ${qtd.gas}x Botijão Gás P13 (13kg)\n`;
+  if(qtd.agua>0) msg += `• ${qtd.agua}x Água Mineral (20L)\n`;
+  
+  let totalFinal = parseFloat(document.getElementById('valor-total').innerText.replace('.','').replace(',','.'));
+  
+  msg += `\nTotal estimado${descontoAplicado ? ' (com desconto)' : ''}: R$ ${totalFinal.toLocaleString('pt-BR',{minimumFractionDigits:2})}\n`;
+  
+  msg += `\nNome: ${nome}\nEndereço de entrega:\n${endereco}\nForma de pagamento:\n${pagamento}\n`;
+  
+  if(obs) msg += `\nObservações:\n${obs}\n`;
+  
+  // Se usou cupom válido, mostra no WhatsApp
+  if(document.getElementById('usarPromo').checked && descontoAplicado) {
+    msg += `\nCódigo promocional utilizado!\n`;
+  }
+
+  Swal.fire({
+    icon:'success',
+    title:'Pedido pronto!',
+    text:'Você será redirecionado para o WhatsApp.',
+    showConfirmButton:false,
+    timerProgressBar:true,
+    timer:1500,
+    didClose() {
+      const url = `https://wa.me/${distFone}?text=${encodeURIComponent(msg)}`;
+      window.open(url,'_blank');
+    }
+  });
+}
+
+// Eventos para atualizar total ao digitar cupom ou mudar campos
+['distribuidora','nome','endereco','pagamento','obs','codigoPromo'].forEach(id=>{
+   document.getElementById(id).addEventListener('input', atualizarTotal);
+});
+document.querySelectorAll('.quantidade-btn').forEach(btn=>{
+   btn.addEventListener('click', atualizarTotal);
+});
+
+// Inicializa preços se já selecionado
+window.onload=atualizarPrecos;
+
+</script>
+</body>
+</html>
